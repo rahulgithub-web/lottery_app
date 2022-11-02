@@ -5,6 +5,7 @@ import Header from "../components/Header";
 import Loading from "../components/Loading";
 import Login from "../components/Login";
 import {ethers} from "ethers";
+import {currency} from "../constants"
 
 export default function Home() {
   const address = useAddress();
@@ -12,9 +13,15 @@ export default function Home() {
   const { contract, isLoading } = useContract(
     process.env.NEXT_PUBLIC_LOTTERY_CONTACT_ADDRESS
   );
-  const {data: RemainingTickets } = useContractRead(contract, "RemainingTicket");
+  const { data: expiration } = useContractRead(contract, "expiration")  
+
+  const {data: remainingTickets } = useContractRead(contract, "RemainingTickets");
    
-  const {data: currentWinningReward} = useContractRead(contract, "CurrentWinningReward")
+  const {data: currentWinningReward} = useContractRead(contract, "CurrentWinningReward");
+
+  const {data: ticketPrice} = useContractRead(contract, "ticketPrice");
+
+  const {data: ticketCommission} = useContractRead(contract, "ticketCommission");
 
   if (isLoading) return <Loading />;
   if (!address) return <Login />;
@@ -36,11 +43,11 @@ export default function Home() {
             <div className="flex justify-between p-2 space-x-2">
               <div className="stats">
                 <h2 className="text-sm">Total Pool</h2>
-                <p className="text-xl">{currentWinningReward && ethers.utils.formatEther(currentWinningReward.toString())}{" "}MATIC</p>
+                <p className="text-xl">{currentWinningReward && ethers.utils.formatEther(currentWinningReward.toString())}{" "}{currency}</p>
               </div>
               <div className="stats">
                 <h2 className="text-sm">Tickets Remaining</h2>
-                <p className="text-xl">{RemainingTickets?.toNumber()}</p>
+                <p className="text-xl">{remainingTickets?.toNumber()}</p>
               </div>
             </div>
 
@@ -51,7 +58,7 @@ export default function Home() {
             <div className="stats-container">
               <div className="flex justify-between items-center text-white pb-2">
                 <h2 className="">Price per ticket </h2>
-                <p>0.01 MATIC</p>
+                <p>{ticketPrice && ethers.utils.formatEther(ticketPrice.toString())}{" "}{currency}</p>
               </div>
               <div className="flex text-white items-center space-x-2 bg-[#091818] border-[#004337] border p-4">
                 <p>TICKETS</p>
@@ -67,12 +74,12 @@ export default function Home() {
               <div className="space-y-2 mt-5">
                 <div className="text-sm second-container font-extrabold">
                   <p>Total cost of tickets</p>
-                  <p>0.999</p>
+                  <p>{ticketPrice && Number(ethers.utils.formatEther(ticketPrice.toString()))*quantity}{" "}{currency}</p>
                 </div>
 
                 <div className="second-container">
                   <p>Service fees</p>
-                  <p>0.001 MATIC</p>
+                  <p>{ticketCommission && ethers.utils.formatEther(ticketCommission.toString())}{" "}{currency}</p>
                 </div>
 
                 <div className="second-container">
@@ -81,7 +88,9 @@ export default function Home() {
                 </div>
               </div>
 
-              <button className="mt-5 w-full bg-gradient-to-br from-orange-500 to-emerald-600 px-10 py-5 rounded-md text-white shadow-xl disabled:from-gray-500 disabled:text-gray-100 disabled:to-gray-600 disabled:cursor-not-allowed">
+              <button 
+              disabled={expiration?.toString()< Date.now().toString || remainingTickets?.toNumber() === 0}
+              className="mt-5 w-full bg-gradient-to-br from-orange-500 to-emerald-600 px-10 py-5 rounded-md text-white shadow-xl disabled:from-gray-500 disabled:text-gray-100 disabled:to-gray-600 disabled:cursor-not-allowed">
                 Buy Tickets
               </button>
             </div>
